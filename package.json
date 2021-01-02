@@ -1,0 +1,13 @@
+{
+  "name": "tizzle",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack serve --config=.webpack/webpack.development.js --mode development",
+    "build": "webpack --mode production --config=.webpack/webpack.production.js"
+  },
+  "dependencies": {
+    "webpack": "^5.11.1",
+    "webpack-cli": "^4.3.1",
+    "webpack-dev-server": "^3.11.1"
+  }
+}
