@@ -8,7 +8,7 @@ module.exports = {
     open: true,
     contentBase: './public',
     publicPath: '/dist',
-    port: 9000,
+    port: 9001,
   },
   devtool: 'eval-cheap-module-source-map',
 };
