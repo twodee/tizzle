@@ -1,12 +1,14 @@
 import {VertexAttributes} from "./twodeejs/vertex_attributes";
 import {VertexArray} from "./twodeejs/vertex_array";
 import {ShaderProgram} from "./twodeejs/shader";
+import {Matrix4} from "./twodeejs/matrix";
 
 const canvas = document.getElementById('canvas');
 window.gl = canvas.getContext('webgl2');
 
 let shader;
 let vertexArray;
+let eyeToClip;
 
 function render() {
   gl.clearColor(1, 0, 1, 1);
@@ -15,6 +17,8 @@ function render() {
 
   shader.bind();
   vertexArray.bind();
+  console.log(eyeToClip);
+  shader.setUniformMatrix4("eyeToClip", eyeToClip);
   vertexArray.drawIndexed(gl.TRIANGLES);
   vertexArray.unbind();
   shader.unbind();
@@ -23,6 +27,14 @@ function render() {
 function onSizeChanged() {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
+  const aspect = canvas.width / canvas.height;
+  const size = 2;
+  if (aspect >= 1) {
+    eyeToClip = Matrix4.ortho(-size * aspect, size * aspect, -size, size, 10, -10);
+  } else {
+    eyeToClip = Matrix4.ortho(-size, size, -size / aspect, size / aspect, 10, -10);
+  }
+  console.log(eyeToClip);
   render();
 }
 
@@ -50,10 +62,11 @@ async function initialize() {
 
 
   const vertexSource = `
+uniform mat4 eyeToClip;
 in vec3 position;
 
 void main() {
-  gl_Position = vec4(position, 1.0);
+  gl_Position = eyeToClip * vec4(position, 1.0);
 }
   `;
 
