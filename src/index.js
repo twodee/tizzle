@@ -2,6 +2,7 @@ import {VertexAttributes} from "./twodeejs/vertex_attributes";
 import {VertexArray} from "./twodeejs/vertex_array";
 import {ShaderProgram} from "./twodeejs/shader";
 import {Matrix4} from "./twodeejs/matrix";
+import {Trackball} from "./twodeejs/trackball";
 
 const canvas = document.getElementById('canvas');
 window.gl = canvas.getContext('webgl2');
@@ -9,6 +10,7 @@ window.gl = canvas.getContext('webgl2');
 let shader;
 let vertexArray;
 let eyeToClip;
+let trackball;
 
 function render() {
   gl.clearColor(1, 0, 1, 1);
@@ -17,8 +19,8 @@ function render() {
 
   shader.bind();
   vertexArray.bind();
-  console.log(eyeToClip);
   shader.setUniformMatrix4("eyeToClip", eyeToClip);
+  shader.setUniformMatrix4("rotation", trackball.rotation);
   vertexArray.drawIndexed(gl.TRIANGLES);
   vertexArray.unbind();
   shader.unbind();
@@ -34,7 +36,7 @@ function onSizeChanged() {
   } else {
     eyeToClip = Matrix4.ortho(-size, size, -size / aspect, size / aspect, 10, -10);
   }
-  console.log(eyeToClip);
+  trackball.setViewport(canvas.width, canvas.height);
   render();
 }
 
@@ -59,14 +61,15 @@ function makeBox() {
 }
 
 async function initialize() {
-
+  trackball = new Trackball();
 
   const vertexSource = `
 uniform mat4 eyeToClip;
+uniform mat4 rotation;
 in vec3 position;
 
 void main() {
-  gl_Position = eyeToClip * vec4(position, 1.0);
+  gl_Position = eyeToClip * rotation * vec4(position, 1.0);
 }
   `;
 
@@ -82,6 +85,17 @@ void main() {
   makeBox();
   window.addEventListener('resize', onSizeChanged);
   onSizeChanged();
+
+  window.addEventListener('mousedown', event => {
+    trackball.start(event.clientX, canvas.height - event.clientY);
+  });
+
+  window.addEventListener('mousemove', event => {
+    if (event.buttons !== 0) {
+      trackball.drag(event.clientX, canvas.height - event.clientY);
+      render();
+    }
+  });
 }
 
 initialize();
