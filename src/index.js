@@ -1,6 +1,6 @@
 import {VertexAttributes} from "./twodeejs/vertex_attributes";
 import {VertexArray} from "./twodeejs/vertex_array";
-import {ShaderProgram} from "./twodeejs/shader";
+import {ShaderProgram} from "./twodeejs/shader-program";
 import {Matrix4} from "./twodeejs/matrix";
 import {Trackball} from "./twodeejs/trackball";
 
@@ -46,15 +46,29 @@ function makeBox() {
     1, -1, 1,
     -1, 1, 1,
     1, 1, 1,
+    -1, -1, -1,
+    1, -1, -1,
+    -1, 1, -1,
+    1, 1, -1,
   ];
 
   const faces = [
     0, 1, 2,
     1, 3, 2,
+    4, 7, 5,
+    4, 6, 7,
+    1, 5, 3,
+    3, 5, 7,
+    0, 6, 4,
+    2, 6, 0,
+    2, 3, 7,
+    2, 7, 6,
+    0, 7, 1,
+    0, 6, 7,
   ];
 
   const attributes = new VertexAttributes();
-  attributes.addAttribute("position", 4, 3, positions);
+  attributes.addAttribute("position", 8, 3, positions);
   attributes.addIndices(faces);
 
   vertexArray = new VertexArray(shader, attributes);
