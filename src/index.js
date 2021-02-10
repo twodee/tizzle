@@ -42,74 +42,59 @@ function onSizeChanged() {
   render();
 }
 
-function makeBox() {
+function makeBox(x, y, z) {
   const positions = [
-    // Front
-    -1, -1, 1,
-     1, -1, 1,
-    -1,  1, 1,
-     1,  1, 1,
-
-     // Top
-    -1,  1, 1,
-     1,  1, 1,
-    -1,  1, -1,
-     1,  1, -1,
-
-     // Back
-     1, -1, -1,
-    -1, -1, -1,
-     1,  1, -1,
-    -1,  1, -1,
-
-    // Bottom
-    -1, -1, -1,
-     1, -1, -1,
-    -1, -1,  1,
-     1, -1,  1,
-
-    // Right
-     1,  1, -1,
-     1, -1, -1,
-     1,  1,  1,
-     1, -1,  1,
-
-     //Left
-     -1,  1, -1,
-     -1, -1, -1,
-     -1,  1,  1,
-     -1, -1,  1,
-
+    -0.5 + x, -0.5 + y,  0.5 + z, // Front
+     0.5 + x, -0.5 + y,  0.5 + z,
+    -0.5 + x,  0.5 + y,  0.5 + z,
+     0.5 + x,  0.5 + y,  0.5 + z,
+    -0.5 + x,  0.5 + y,  0.5 + z, // Top
+     0.5 + x,  0.5 + y,  0.5 + z,
+    -0.5 + x,  0.5 + y, -0.5 + z,
+     0.5 + x,  0.5 + y, -0.5 + z,
+     0.5 + x, -0.5 + y, -0.5 + z, // Back
+    -0.5 + x, -0.5 + y, -0.5 + z,
+     0.5 + x,  0.5 + y, -0.5 + z,
+    -0.5 + x,  0.5 + y, -0.5 + z,
+    -0.5 + x, -0.5 + y, -0.5 + z, // Bottom
+     0.5 + x, -0.5 + y, -0.5 + z,
+    -0.5 + x, -0.5 + y,  0.5 + z,
+     0.5 + x, -0.5 + y,  0.5 + z,
+     0.5 + x,  0.5 + y, -0.5 + z, // Right
+     0.5 + x, -0.5 + y, -0.5 + z,
+     0.5 + x,  0.5 + y,  0.5 + z,
+     0.5 + x, -0.5 + y,  0.5 + z,
+    -0.5 + x,  0.5 + y, -0.5 + z, // Left
+    -0.5 + x, -0.5 + y, -0.5 + z,
+    -0.5 + x,  0.5 + y,  0.5 + z,
+    -0.5 + x, -0.5 + y,  0.5 + z,
   ];
 
   const normals = [
-    0, 0, 1,
-    0, 0, 1,
-    0, 0, 1,
-    0, 0, 1,
-    0, 1, 0,
-    0, 1, 0,
-    0, 1, 0,
-    0, 1, 0,
-    0, 0, -1,
-    0, 0, -1,
-    0, 0, -1,
-    0, 0, -1,
-    0, -1, 0,
-    0, -1, 0,
-    0, -1, 0,
-    0, -1, 0,
-    1, 0, 0,
-    1, 0, 0,
-    1, 0, 0,
-    1, 0, 0,
-    -1, 0, 0,
-    -1, 0, 0,
-    -1, 0, 0,
-    -1, 0, 0,
-
-
-    
+     0,  0,  1,
+     0,  0,  1,
+     0,  0,  1,
+     0,  0,  1,
+     0,  1,  0,
+     0,  1,  0,
+     0,  1,  0,
+     0,  1,  0,
+     0,  0, -1,
+     0,  0, -1,
+     0,  0, -1,
+     0,  0, -1,
+     0, -1,  0,
+     0, -1,  0,
+     0, -1,  0,
+     0, -1,  0,
+     1,  0,  0,
+     1,  0,  0,
+     1,  0,  0,
+     1,  0,  0,
+    -1,  0,  0,
+    -1,  0,  0,
+    -1,  0,  0,
+    -1,  0,  0,
   ];
 
   const faces = [
@@ -132,9 +117,32 @@ function makeBox() {
     21, 23, 22,
   ];
 
+  return {positions, normals, faces};
+}
+
+function makeBoxes() {
+  const centers = [
+    [0, 0, 0],
+    [1, 1, 1],
+    [-1, -1, -1]
+  ];
+
+  let positions = [];
+  let normals = [];
+  let faces = [];
+
+  for (let center of centers) {
+    const box = makeBox(center[0], center[1], center[2]);
+    const offset = positions.length / 3;
+    console.log(offset);
+    positions.push(...box.positions);
+    normals.push(...box.normals);
+    faces.push(...box.faces.map(i => i + offset));
+  }
+
   const attributes = new VertexAttributes();
-  attributes.addAttribute("position", 24, 3, positions);
-  attributes.addAttribute("normal", 24, 3, normals);
+  attributes.addAttribute("position", 48, 3, positions);
+  attributes.addAttribute("normal", 48, 3, normals);
   attributes.addIndices(faces);
 
   vertexArray = new VertexArray(shader, attributes);
@@ -172,7 +180,7 @@ void main() {
   `;
   shader = new ShaderProgram(vertexSource, fragmentSource);
 
-  makeBox();
+  makeBoxes();
   window.addEventListener('resize', onSizeChanged);
   onSizeChanged();
 
