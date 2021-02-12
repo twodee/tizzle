@@ -42,7 +42,7 @@ function onSizeChanged() {
   render();
 }
 
-function makeBox(x, y, z) {
+function makeBox(x, y, z, rgb) {
   const positions = [
     -0.5 + x, -0.5 + y,  0.5 + z, // Front
      0.5 + x, -0.5 + y,  0.5 + z,
@@ -97,6 +97,11 @@ function makeBox(x, y, z) {
     -1,  0,  0,
   ];
 
+  const colors = [];
+  for (let i = 0; i < 24; i = i + 1) {
+    colors.push(...rgb);
+  }
+
   const faces = [
     0, 1, 2,
     1, 3, 2,
@@ -117,32 +122,35 @@ function makeBox(x, y, z) {
     21, 23, 22,
   ];
 
-  return {positions, normals, faces};
+  return {positions, normals, colors, faces};
 }
 
 function makeBoxes() {
   const centers = [
-    [0, 0, 0],
-    [1, 1, 1],
-    [-1, -1, -1]
+    [0, 0, 0, [1, .5, .7]],
+    [1, 1, 1, [.7, 1, .5]],
+    [-1, -1, -1, [0.188, 0.835, 0.784]]
   ];
 
   let positions = [];
   let normals = [];
+  let colors = [];
   let faces = [];
 
   for (let center of centers) {
-    const box = makeBox(center[0], center[1], center[2]);
+    const box = makeBox(center[0], center[1], center[2], center[3]);
     const offset = positions.length / 3;
-    console.log(offset);
     positions.push(...box.positions);
     normals.push(...box.normals);
+    colors.push(...box.colors);
     faces.push(...box.faces.map(i => i + offset));
   }
 
   const attributes = new VertexAttributes();
-  attributes.addAttribute("position", 48, 3, positions);
-  attributes.addAttribute("normal", 48, 3, normals);
+  attributes.addAttribute("position", 72, 3, positions);
+  attributes.addAttribute("normal", 72, 3, normals);
+  attributes.addAttribute("color", 72, 3, colors);
+
   attributes.addIndices(faces);
 
   vertexArray = new VertexArray(shader, attributes);
@@ -156,17 +164,21 @@ uniform mat4 eyeToClip;
 uniform mat4 rotation;
 in vec3 position;
 in vec3 normal;
+in vec3 color;
 
 out vec3 fnormal;
+out vec3 albedo;
 
 void main() {
   gl_Position = eyeToClip * rotation * vec4(position, 1.0);
   fnormal = (rotation * vec4(normal, 0.0)).xyz;
+  albedo = color;
 }
   `;
 
   const fragmentSource = `
 in vec3 fnormal;
+in vec3 albedo;
 out vec4 fragmentColor;
 
 const vec3 light_direction = normalize(vec3(1.0, 1.0, 1.0));
@@ -175,7 +187,7 @@ void main() {
   vec3 normal = normalize(fnormal);
   float litness = max(0.0, dot(normal, light_direction));
   fragmentColor = vec4(0.0, 1.0, 0.6, 1.0);
-  fragmentColor = vec4(vec3(litness), 1.0);
+  fragmentColor = vec4(albedo * litness, 1.0);
 }
   `;
   shader = new ShaderProgram(vertexSource, fragmentSource);
