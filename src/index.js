@@ -1,3 +1,5 @@
+import {parseGIF, decompressFrames} from 'gifuct-js';
+
 import {VertexAttributes} from "./twodeejs/vertex_attributes";
 import {VertexArray} from "./twodeejs/vertex_array";
 import {ShaderProgram} from "./twodeejs/shader-program";
@@ -32,11 +34,11 @@ function onSizeChanged() {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   const aspect = canvas.width / canvas.height;
-  const size = 2;
+  const size = 16;
   if (aspect >= 1) {
-    eyeToClip = Matrix4.ortho(-size * aspect, size * aspect, -size, size, -10, 10);
+    eyeToClip = Matrix4.ortho(-size * aspect, size * aspect, -size, size, -100, 100);
   } else {
-    eyeToClip = Matrix4.ortho(-size, size, -size / aspect, size / aspect, -10, 10);
+    eyeToClip = Matrix4.ortho(-size, size, -size / aspect, size / aspect, -100, 100);
   }
   trackball.setViewport(canvas.width, canvas.height);
   render();
@@ -125,12 +127,12 @@ function makeBox(x, y, z, rgb) {
   return {positions, normals, colors, faces};
 }
 
-function makeBoxes() {
-  const centers = [
-    [0, 0, 0, [1, .5, .7]],
-    [1, 1, 1, [.7, 1, .5]],
-    [-1, -1, -1, [0.188, 0.835, 0.784]]
-  ];
+function makeBoxes(centers) {
+  // const centers = [
+  //   [0, 0, 0, [1, .5, .7]],
+  //   [1, 1, 1, [.7, 1, .5]],
+  //   [-1, -1, -1, [0.188, 0.835, 0.784]]
+  // ];
 
   let positions = [];
   let normals = [];
@@ -192,7 +194,8 @@ void main() {
   `;
   shader = new ShaderProgram(vertexSource, fragmentSource);
 
-  makeBoxes();
+  await loadGif('face.gif');
+
   window.addEventListener('resize', onSizeChanged);
   onSizeChanged();
 
@@ -206,6 +209,30 @@ void main() {
       render();
     }
   });
+}
+
+async function loadGif(url) {
+  const frames = await fetch(url)
+    .then(resp => resp.arrayBuffer())
+    .then(buff => parseGIF(buff))
+    .then(gif => decompressFrames(gif, true));
+  console.log(frames);
+
+  let centers = [];
+  for (let t = 0; t < frames.length; t++) {
+    const frame = frames[t];
+    for (let r = 0; r < frame.dims.height; r++) {
+      for (let c = 0; c < frame.dims.width; c++) {
+        const i = r * frame.dims.width + c;
+        if (frame.pixels[i] !== frame.transparentIndex) {
+          const rgb = frame.colorTable[frame.pixels[i]];
+          centers.push([c, r, t, [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255]]);
+        }
+      }
+    }
+  }
+
+  makeBoxes(centers);
 }
 
 initialize();
