@@ -1,3 +1,4 @@
+// https://github.com/matt-way/gifuct-js
 import {parseGIF, decompressFrames} from 'gifuct-js';
 
 import {VertexAttributes} from "./twodeejs/vertex_attributes";
@@ -13,17 +14,20 @@ let shader;
 let vertexArray;
 let eyeToClip;
 let trackball;
+let dimensions;
+let shift;
 
 function render() {
+  gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(1, 0, 1, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  gl.viewport(0, 0, canvas.width, canvas.height);
 
   gl.enable(gl.DEPTH_TEST);
 
   shader.bind();
   vertexArray.bind();
   shader.setUniformMatrix4("eyeToClip", eyeToClip);
+  shader.setUniformMatrix4("modelToWorld", shift);
   shader.setUniformMatrix4("rotation", trackball.rotation);
   vertexArray.drawIndexed(gl.TRIANGLES);
   vertexArray.unbind();
@@ -163,6 +167,7 @@ async function initialize() {
 
   const vertexSource = `
 uniform mat4 eyeToClip;
+uniform mat4 modelToWorld;
 uniform mat4 rotation;
 in vec3 position;
 in vec3 normal;
@@ -172,7 +177,7 @@ out vec3 fnormal;
 out vec3 albedo;
 
 void main() {
-  gl_Position = eyeToClip * rotation * vec4(position, 1.0);
+  gl_Position = eyeToClip * rotation * modelToWorld * vec4(position, 1.0);
   fnormal = (rotation * vec4(normal, 0.0)).xyz;
   albedo = color;
 }
@@ -216,7 +221,8 @@ async function loadGif(url) {
     .then(resp => resp.arrayBuffer())
     .then(buff => parseGIF(buff))
     .then(gif => decompressFrames(gif, true));
-  console.log(frames);
+
+  dimensions = [frames[0].dims.width, frames[0].dims.height, frames.length];
 
   let centers = [];
   for (let t = 0; t < frames.length; t++) {
@@ -226,12 +232,18 @@ async function loadGif(url) {
         const i = r * frame.dims.width + c;
         if (frame.pixels[i] !== frame.transparentIndex) {
           const rgb = frame.colorTable[frame.pixels[i]];
-          centers.push([c, r, t, [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255]]);
+          centers.push([c, dimensions[1] - 1 - r, t, [rgb[0] / 255, rgb[1] / 255, rgb[2] / 255]]);
         }
       }
     }
   }
 
+  shift = Matrix4.translate(
+    dimensions[0] * -0.5,
+    dimensions[1] * -0.5,
+    dimensions[2] * -0.5,
+  );
+  console.log(shift.toString());
   makeBoxes(centers);
 }
 
