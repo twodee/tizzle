@@ -38,7 +38,7 @@ function onSizeChanged() {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
   const aspect = canvas.width / canvas.height;
-  const size = 16;
+  const size = Math.max(...dimensions) * 0.5;
   if (aspect >= 1) {
     eyeToClip = Matrix4.ortho(-size * aspect, size * aspect, -size, size, -100, 100);
   } else {
@@ -199,7 +199,8 @@ void main() {
   `;
   shader = new ShaderProgram(vertexSource, fragmentSource);
 
-  await loadGif('face.gif');
+  // await loadGif('face.gif');
+  await loadGif('sword.gif');
 
   window.addEventListener('resize', onSizeChanged);
   onSizeChanged();
@@ -243,7 +244,9 @@ async function loadGif(url) {
     dimensions[1] * -0.5,
     dimensions[2] * -0.5,
   );
-  console.log(shift.toString());
+
+  console.log(centers.length);
+  console.log(dimensions);
   makeBoxes(centers);
 }
 
